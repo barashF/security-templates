@@ -1,0 +1,49 @@
+name: DevSecOps Advanced Scan
+
+on:
+    push:
+        branches: ["main", "master"]
+    pull_request:
+        branches: ["main", "master"]
+
+jobs:
+    trivy-scan:
+        name: Run Trivy with Reports
+        runs-on: ubuntu-latest
+        permissions:
+            security-events: write
+            contents: read
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Generate Security Report
+              uses: aquasecurity/trivy-action@master
+              with:
+                  scan-type: "fs"
+                  scan-ref: "."
+                  scanners: "vuln,secret"
+                  format: "sarif"
+                  output: "trivy-results.sarif"
+
+            - name: Upload Trivy scan results to GitHub Security
+              uses: github/codeql-action/upload-sarif@v3
+              with:
+                  sarif_file: "trivy-results.sarif"
+
+            - name: Run Semgrep SAST
+              uses: returntocorp/semgrep-action@v1
+              continue-on-error: true
+              with:
+                  config: p/golang p/security-audit
+                  audit: true
+
+            - name: Block on High/Critical
+              uses: aquasecurity/trivy-action@master
+              with:
+                  scan-type: "fs"
+                  scan-ref: "."
+                  scanners: "vuln,secret"
+                  severity: "HIGH,CRITICAL"
+                  exit-code: "1"
