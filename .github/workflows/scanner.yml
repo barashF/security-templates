@@ -36,7 +36,6 @@ jobs:
               continue-on-error: true
               with:
                   config: p/golang p/security-audit
-                  audit: true
 
             - name: Block on High/Critical
               uses: aquasecurity/trivy-action@master
@@ -45,4 +44,5 @@ jobs:
                   scan-ref: "."
                   scanners: "vuln,secret"
                   severity: "HIGH,CRITICAL"
+                  format: "table"
                   exit-code: "1"
